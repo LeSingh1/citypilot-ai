@@ -1,4 +1,4 @@
-import { FileText, Search, Sparkles } from 'lucide-react'
+import { FileText, Search, Sparkles, TrendingUp } from 'lucide-react'
 import { useCityStore } from '@/stores/cityStore'
 import { useScenarioStore } from '@/stores/scenarioStore'
 import { useSimulationStore } from '@/stores/simulationStore'
@@ -13,6 +13,9 @@ export function RightPanel() {
   const afterPreview = previewAfterMetrics(planning)
   const populationServed = topRecommendation.expectedImpact.populationServed ?? Math.round((selectedCity?.population_current ?? planning.timelinePopulation) * 0.018)
 
+  const topGap = planning.underservedZones[0]
+  const topGapName = topGap?.name ?? topRecommendation.zoneName ?? 'South Emergency Gap'
+
   return (
     <aside
       className="w-[300px] shrink-0 overflow-y-auto"
@@ -23,48 +26,70 @@ export function RightPanel() {
       }}
     >
       <div className="space-y-3 p-3">
+
+        {/* Product label */}
+        <div className="rounded-lg px-3 py-2 flex items-center gap-2" style={{ background: 'rgba(0,212,255,0.06)', border: '1px solid rgba(0,212,255,0.15)' }}>
+          <Sparkles size={12} style={{ color: 'var(--color-accent-cyan)' }} />
+          <span className="font-mono uppercase tracking-widest" style={{ fontSize: 9, color: 'var(--color-accent-cyan)' }}>
+            CityPilot AI Copilot
+          </span>
+        </div>
+
         {!planning.hasAnalyzed ? (
           <section className="rounded-lg p-4" style={{ background: 'var(--color-bg-hover)', border: '1px solid var(--color-border-subtle)' }}>
-            <h2 className="font-display text-lg font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
+            <h2 className="font-display text-base font-semibold leading-tight mb-1" style={{ color: 'var(--color-text-primary)' }}>
               Ready to analyze infrastructure gaps
             </h2>
-            <p className="mt-2 text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-              Run analysis to identify underserved zones and recommended fixes.
+            <p className="leading-relaxed mb-4" style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>
+              CityPilot AI will scan this city's growth scenario, identify underserved districts, and rank infrastructure investments by equity and cost.
             </p>
             <button
               type="button"
               onClick={() => selectedCity && analyzeDemo(selectedCity.id, activeScenario)}
-              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold"
-              style={{ background: 'var(--color-bg-panel)', color: 'var(--color-accent-cyan)', border: '1px solid rgba(255,71,87,0.35)', boxShadow: 'var(--shadow-sm)' }}
+              className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold"
+              style={{ background: 'var(--color-bg-panel)', color: 'var(--color-accent-cyan)', border: '1px solid rgba(0,212,255,0.35)' }}
             >
-              <Search size={16} />
+              <Search size={15} />
               Analyze Infrastructure Gaps
             </button>
           </section>
         ) : (
-          <section className="rounded-lg p-4" style={{ background: 'var(--color-bg-hover)', border: '1px solid rgba(255,71,87,0.3)', boxShadow: 'var(--shadow-sm)' }}>
-            <div className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-widest" style={{ color: 'var(--color-accent-cyan)' }}>
-              <Sparkles size={14} />
-              Top Recommendation
+          <section className="rounded-lg p-4" style={{ background: 'var(--color-bg-hover)', border: '1px solid rgba(255,71,87,0.3)' }}>
+            <div className="flex items-center gap-2 font-mono uppercase tracking-widest mb-2" style={{ fontSize: 9, color: 'var(--color-accent-cyan)' }}>
+              <Sparkles size={12} />
+              Top Problem Detected
             </div>
             {!planning.hasAppliedAIPlan ? (
               <>
-                <h2 className="mt-2 font-display text-lg font-semibold leading-tight" style={{ color: 'var(--color-text-primary)' }}>
-                  {topRecommendation.zoneName}
+                <h2 className="font-display text-base font-semibold leading-tight mb-1" style={{ color: 'var(--color-text-primary)' }}>
+                  {topGapName} lacks adequate coverage
                 </h2>
-                <p className="mt-3 text-sm leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>
-                  Add <strong>{topItem?.name ?? topRecommendation.title.replace(/^Add\s+/i, '')}</strong>. {topRecommendation.reason}
+                <p className="leading-relaxed mb-3" style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>
+                  <strong>Recommendation:</strong> Add{' '}
+                  {topItem?.name ?? topRecommendation.title.replace(/^Add\s+/i, '')}.{' '}
+                  {topRecommendation.reason}
                 </p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+
+                {/* Business value callout */}
+                <div className="rounded-lg px-3 py-2 mb-3" style={{ background: 'rgba(0,184,148,0.07)', border: '1px solid rgba(0,184,148,0.2)' }}>
+                  <div className="font-mono uppercase tracking-widest mb-1" style={{ fontSize: 9, color: 'var(--color-accent-green)' }}>
+                    Business value
+                  </div>
+                  <p style={{ color: 'var(--color-text-secondary)', fontSize: 11, lineHeight: 1.5 }}>
+                    This gives planning teams an early scenario report before commissioning expensive external studies.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
                   <Impact label="Emergency Access" value={metricRange(before?.emergencyAccess, afterPreview.emergencyAccess)} />
                   <Impact label="City Health" value={metricRange(before?.cityHealth, afterPreview.cityHealth)} />
                   <Impact label="Equity Score" value={metricRange(before?.equityScore, afterPreview.equityScore)} />
-                  <Impact label="Commute" value={`${before?.averageCommute ?? '—'} to ${afterPreview.averageCommute} min`} />
-                  <Impact label="Cost" value={formatMoney(topItem?.costEstimate ?? topRecommendation.costEstimate ?? topRecommendation.estimatedCost)} />
-                  <Impact label="Confidence" value={`${Math.round((topItem?.confidence ?? topRecommendation.confidence ?? 0.82) * 100)}%`} />
-                  <Impact label="Population Served" value={populationServed.toLocaleString()} />
+                  <Impact label="Commute" value={`${before?.averageCommute ?? '—'} → ${afterPreview.averageCommute} min`} />
+                  <Impact label="Cost Estimate" value={formatMoney(topItem?.costEstimate ?? topRecommendation.costEstimate ?? topRecommendation.estimatedCost)} />
+                  <Impact label="Residents Served" value={populationServed.toLocaleString()} />
                 </div>
-                <div className="mt-4 grid gap-2">
+
+                <div className="grid gap-2">
                   <button
                     type="button"
                     onClick={() => applyAIPlan(activeScenario)}
@@ -77,7 +102,7 @@ export function RightPanel() {
                     type="button"
                     onClick={() => applyAIPlan(activeScenario)}
                     className="rounded-lg px-3 py-3 text-sm font-semibold"
-                    style={{ background: 'var(--color-bg-panel)', color: 'var(--color-accent-cyan)', border: '1px solid rgba(255,71,87,0.35)' }}
+                    style={{ background: 'var(--color-bg-panel)', color: 'var(--color-accent-cyan)', border: '1px solid rgba(0,212,255,0.35)' }}
                   >
                     Apply Full AI Plan
                   </button>
@@ -85,30 +110,40 @@ export function RightPanel() {
               </>
             ) : (
               <>
-                <h2 className="mt-2 font-display text-lg font-semibold" style={{ color: 'var(--color-accent-green)' }}>
+                <h2 className="font-display text-base font-semibold" style={{ color: 'var(--color-accent-green)' }}>
                   AI Plan Applied
                 </h2>
+                <p className="mt-1 mb-3" style={{ color: 'var(--color-text-secondary)', fontSize: 12 }}>
+                  Infrastructure improvements applied. Generate a planning report to document before/after impact.
+                </p>
                 <button
                   type="button"
                   onClick={openReport}
-                  className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-lg px-3 py-3 text-sm font-semibold"
                   style={{ background: 'var(--color-bg-panel)', color: 'var(--color-accent-purple)', border: '1px solid var(--color-border-subtle)' }}
                 >
-                  <FileText size={16} />
-                  Generate Report
+                  <FileText size={15} />
+                  Generate Planning Report
                 </button>
               </>
             )}
           </section>
         )}
 
+        {/* Impact Summary after plan applied */}
         {planning.hasAppliedAIPlan && (
           <section className="rounded-lg p-4" style={{ background: 'rgba(0,184,148,0.08)', border: '1px solid rgba(0,184,148,0.32)' }}>
-            <div className="font-display text-base font-semibold" style={{ color: 'var(--color-accent-green)' }}>Impact Summary</div>
+            <div className="flex items-center gap-2 mb-2">
+              <TrendingUp size={14} style={{ color: 'var(--color-accent-green)' }} />
+              <div className="font-display text-sm font-semibold" style={{ color: 'var(--color-accent-green)' }}>
+                Before / After Impact
+              </div>
+            </div>
             <ImpactSummary />
           </section>
         )}
 
+        {/* Placement feedback */}
         {planning.placementFeedback && (
           <section className="rounded-lg p-3" style={{
             background: planning.placementFeedback.type === 'invalid' ? 'rgba(225,112,85,0.09)' : planning.placementFeedback.type === 'good' ? 'rgba(0,184,148,0.08)' : 'rgba(108,92,231,0.08)',
@@ -123,9 +158,10 @@ export function RightPanel() {
           </section>
         )}
 
+        {/* Detailed Metrics */}
         {planning.beforeScores && (
           <details>
-            <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
+            <summary className="cursor-pointer font-mono uppercase tracking-widest" style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
               Detailed Metrics
             </summary>
             <div className="mt-2 grid gap-2">
@@ -134,23 +170,29 @@ export function RightPanel() {
               <Metric label="Transit Coverage" before={planning.beforeScores.transitCoverage} after={planning.afterScores?.transitCoverage} />
               <Metric label="Green Space" before={planning.beforeScores.greenSpace} after={planning.afterScores?.greenSpace} />
               <Metric label="Equity Score" before={planning.beforeScores.equityScore} after={planning.afterScores?.equityScore} />
-              <Metric label="15 Minute City" before={planning.beforeScores.fifteenMinuteCityScore ?? 54} after={planning.afterScores?.fifteenMinuteCityScore} />
-              <Metric label="Average Commute" before={planning.beforeScores.averageCommute} after={planning.afterScores?.averageCommute} inverse />
+              <Metric label="15-Min City" before={planning.beforeScores.fifteenMinuteCityScore ?? 54} after={planning.afterScores?.fifteenMinuteCityScore} />
+              <Metric label="Avg Commute" before={planning.beforeScores.averageCommute} after={planning.afterScores?.averageCommute} inverse />
             </div>
           </details>
         )}
 
+        {/* Service Gaps */}
         <details>
-          <summary className="cursor-pointer font-mono text-[11px] uppercase tracking-widest" style={{ color: 'var(--color-text-muted)' }}>
-            Current Gaps
+          <summary className="cursor-pointer font-mono uppercase tracking-widest" style={{ fontSize: 10, color: 'var(--color-text-muted)' }}>
+            Service Gaps
           </summary>
           {planning.hasAnalyzed ? (
             <div className="mt-2 grid gap-2">
               {planning.underservedZones.map((gap) => (
-                <div key={gap.id} className="rounded-lg p-3" style={{ background: gap.isImproved ? 'rgba(0,184,148,0.08)' : 'rgba(225,112,85,0.08)', border: gap.isImproved ? '1px solid rgba(0,184,148,0.25)' : '1px solid rgba(225,112,85,0.25)' }}>
+                <div key={gap.id} className="rounded-lg p-3" style={{
+                  background: gap.isImproved ? 'rgba(0,184,148,0.08)' : 'rgba(225,112,85,0.08)',
+                  border: gap.isImproved ? '1px solid rgba(0,184,148,0.25)' : '1px solid rgba(225,112,85,0.25)',
+                }}>
                   <div className="flex justify-between gap-2">
                     <span className="text-sm font-semibold" style={{ color: 'var(--color-text-primary)' }}>{gap.name}</span>
-                    <span className="font-mono text-[10px]" style={{ color: gap.isImproved ? 'var(--color-accent-green)' : 'var(--color-accent-danger)' }}>{gap.isImproved ? 'Improved' : 'Gap'}</span>
+                    <span className="font-mono" style={{ fontSize: 10, color: gap.isImproved ? 'var(--color-accent-green)' : 'var(--color-accent-danger)' }}>
+                      {gap.isImproved ? 'Resolved' : 'Gap'}
+                    </span>
                   </div>
                   <p className="mt-1 text-xs leading-relaxed" style={{ color: 'var(--color-text-secondary)' }}>{gap.reason}</p>
                 </div>
@@ -178,13 +220,13 @@ function ImpactSummary() {
   const fifteen = summary?.fifteenMinuteDelta ?? delta(after?.fifteenMinuteCityScore, before?.fifteenMinuteCityScore)
   const cost = summary?.budgetUsed ?? after?.totalEstimatedCost ?? planning.infrastructure.filter((item) => item.status === 'proposed').reduce((sum, item) => sum + item.costEstimate, 0)
   return (
-    <div className="mt-3 grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 gap-2">
       <Impact label="Residents Served" value={residents.toLocaleString()} />
-      <Impact label="Gaps Improved" value={String(gaps)} />
-      <Impact label="City Health" value={formatDelta(cityHealth)} />
-      <Impact label="Emergency" value={formatDelta(emergency)} />
-      <Impact label="Equity Score" value={formatDelta(equity)} />
-      <Impact label="15 Min City" value={formatDelta(fifteen)} />
+      <Impact label="Gaps Resolved" value={String(gaps)} />
+      <Impact label="City Health ↑" value={formatDelta(cityHealth)} />
+      <Impact label="Emergency ↑" value={formatDelta(emergency)} />
+      <Impact label="Equity ↑" value={formatDelta(equity)} />
+      <Impact label="15-Min City ↑" value={formatDelta(fifteen)} />
       <Impact label="Total Cost" value={formatMoney(cost)} />
     </div>
   )
@@ -193,26 +235,26 @@ function ImpactSummary() {
 function Impact({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg p-2" style={{ background: 'rgba(255,255,255,0.32)', border: '1px solid var(--color-border-subtle)' }}>
-      <div className="font-mono text-[9px] uppercase tracking-wide" style={{ color: 'var(--color-text-muted)' }}>{label}</div>
-      <div className="mt-1 font-mono text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{value}</div>
+      <div className="font-mono uppercase tracking-wide" style={{ fontSize: 9, color: 'var(--color-text-muted)' }}>{label}</div>
+      <div className="mt-0.5 font-mono text-sm font-bold" style={{ color: 'var(--color-text-primary)' }}>{value}</div>
     </div>
   )
 }
 
 function Metric({ label, before, after, inverse = false }: { label: string; before: number; after?: number; inverse?: boolean }) {
   const currentAfter = after ?? before
-  const delta = Math.round((currentAfter - before) * 10) / 10
-  const improved = inverse ? delta < 0 : delta > 0
+  const d = Math.round((currentAfter - before) * 10) / 10
+  const improved = inverse ? d < 0 : d > 0
   return (
     <div className="rounded-lg p-3" style={{ background: 'var(--color-bg-card)', border: '1px solid var(--color-border-subtle)' }}>
       <div className="flex items-center justify-between gap-2">
         <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>{label}</span>
-        <span className="font-mono text-[11px]" style={{ color: Math.abs(delta) < 0.1 ? 'var(--color-text-muted)' : improved ? 'var(--color-accent-green)' : 'var(--color-accent-danger)' }}>
-          {delta > 0 ? '+' : ''}{delta}
+        <span className="font-mono" style={{ fontSize: 11, color: Math.abs(d) < 0.1 ? 'var(--color-text-muted)' : improved ? 'var(--color-accent-green)' : 'var(--color-accent-danger)' }}>
+          {d > 0 ? '+' : ''}{d}
         </span>
       </div>
       <div className="mt-1 font-mono text-lg font-bold" style={{ color: 'var(--color-text-primary)' }}>
-        {before} <span style={{ color: 'var(--color-text-muted)' }}>to</span> {currentAfter}
+        {before} <span style={{ color: 'var(--color-text-muted)' }}>→</span> {currentAfter}
       </div>
     </div>
   )
@@ -234,7 +276,7 @@ function clampMetric(value: number) {
 }
 
 function metricRange(before?: number, after?: number) {
-  return `${before ?? '—'} to ${after ?? '—'}`
+  return `${before ?? '—'} → ${after ?? '—'}`
 }
 
 function delta(after?: number, before?: number) {
